@@ -30,10 +30,20 @@ jobs:
         run: node scripts/pack.mjs
 
       - name: 校验包能装（解出来必须有 manifest）
+        shell: bash
         run: |
-          tar -tzf dist/*.tgz | head -20
-          tar -xzf dist/*.tgz -C /tmp
-          test -f /tmp/yuanling.module.json
+          set -euo pipefail
+          # 别用 `tar ... | head`：head 提前关管道会让 tar 收到 SIGPIPE(141)，
+          # 在 pipefail 下整步失败——上一版就是这么挂的（release 一直没生成）。
+          TGZ=($(ls -1 dist/*.tgz))
+          PKG="${TGZ[0]}"
+          echo "包：$PKG"
+          tar -tzf "$PKG"
+          rm -rf /tmp/pkgcheck && mkdir -p /tmp/pkgcheck
+          tar -xzf "$PKG" -C /tmp/pkgcheck
+          ls -la /tmp/pkgcheck
+          test -f /tmp/pkgcheck/yuanling.module.json
+          echo "✓ 包结构正常"
 
       - name: 附到发行版
         uses: softprops/action-gh-release@v2
