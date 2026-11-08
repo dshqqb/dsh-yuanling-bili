@@ -1,0 +1,16 @@
+# 换行统一：仓库里一律 LF，检出到工作区也用 LF。
+#
+# 为什么写死这个：
+#   1) 不然每次 `git add` 都警告 "LF will be replaced by CRLF"，真正的错误会被淹掉；
+#   2) `scripts/pack.mjs` 是**直接读磁盘字节**打包的——工作区被转成 CRLF，
+#      同一份源码在不同机器上打出来的 tgz 字节就不同，sha256 对不上，
+#      发行版的校验和 `module install --sha256` 都会失效。
+#
+# 想临时覆盖某个文件：在它单独一行写 `*.xxx -text` 或 `binary`。
+* text=auto eol=lf
+
+# 二进制：别做任何换行/文本处理
+*.tgz binary
+*.png binary
+*.jpg binary
+*.ico binary

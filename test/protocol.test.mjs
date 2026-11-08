@@ -77,6 +77,32 @@ test('protocol：manifest 本身合协议——api 1.2、声明 provide.source�
   for (const s of manifest.sources) assert.ok(s.id.startsWith(`${manifest.id}.`), `${s.id} 缺前缀`)
 })
 
+test('protocol：pack 打出来的包结构与协议要求一致（打不了就是发布事故）', async () => {
+  // 这条和 CI 的 verify-pack 是同一份判断逻辑的轻量版：包必须零依赖可解、根有 manifest。
+  // 放在单测里，是为了"本地就能发现，而不是等 tag 推上去 CI 红"。
+  const { execFile } = await import('node:child_process')
+  const { fileURLToPath } = await import('node:url')
+  const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+
+  // 先打包（幂等，覆盖 dist/）
+  await new Promise((resolve, reject) => {
+    execFile(process.execPath, [path.join(root, 'scripts', 'pack.mjs')], (err, out) => {
+      if (err) reject(err)
+      else resolve(out)
+    })
+  })
+
+  // 再校验
+  const out = await new Promise((resolve, reject) => {
+    execFile(process.execPath, [path.join(root, 'scripts', 'verify-pack.mjs')], (err, stdout) => {
+      if (err) reject(new Error(String(err.message) + String(stdout ?? '')))
+      else resolve(String(stdout))
+    })
+  })
+  assert.match(out, /包结构正常/)
+  assert.match(out, /yuanling\.module\.json/)
+})
+
 test('protocol：ui.tabs 声明合法，字段都在 config.schema 里', () => {
   assert.ok(Array.isArray(manifest.ui?.tabs) && manifest.ui.tabs.length >= 1, '要声明自定义 tab')
   const props = Object.keys(manifest.config?.schema?.properties ?? {})

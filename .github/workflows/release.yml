@@ -29,21 +29,8 @@ jobs:
       - name: 打包
         run: node scripts/pack.mjs
 
-      - name: 校验包能装（解出来必须有 manifest）
-        shell: bash
-        run: |
-          set -euo pipefail
-          # 别用 `tar ... | head`：head 提前关管道会让 tar 收到 SIGPIPE(141)，
-          # 在 pipefail 下整步失败——上一版就是这么挂的（release 一直没生成）。
-          TGZ=($(ls -1 dist/*.tgz))
-          PKG="${TGZ[0]}"
-          echo "包：$PKG"
-          tar -tzf "$PKG"
-          rm -rf /tmp/pkgcheck && mkdir -p /tmp/pkgcheck
-          tar -xzf "$PKG" -C /tmp/pkgcheck
-          ls -la /tmp/pkgcheck
-          test -f /tmp/pkgcheck/yuanling.module.json
-          echo "✓ 包结构正常"
+      - name: 校验包能装（用核心同一套解包语义，不依赖 GNU tar）
+        run: node scripts/verify-pack.mjs
 
       - name: 附到发行版
         uses: softprops/action-gh-release@v2
