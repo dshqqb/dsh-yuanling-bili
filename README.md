@@ -6,8 +6,9 @@
 
 | | |
 |---|---|
-| 版本 | `0.1.0`（协议 `api: 1.1`） |
+| 版本 | `0.1.1`（协议 `api: 1.2`） |
 | 用的能力 | `provide.source` — 只被"要数据"，不会往外说话 |
+| 在原灵管理台里 | 「概况」「日志」+ 自己声明的「规则」「点赞记录」（`ui.tabs`） |
 | Gitee | https://gitee.com/dshqqb/dsh-yuanling-bili （**推荐**，国内直连稳） |
 | GitHub | https://github.com/dshqqb/dsh-yuanling-bili （镜像） |
 | 装它 | `yuanling module install --url https://gitee.com/dshqqb/dsh-yuanling-bili` |
@@ -16,7 +17,7 @@
 
 ## 它能干什么
 
-她可以主动向它要数据（协议 v1.1 的 `source.fetch`）：
+**她可以主动向它要数据**（协议 v1.1 的 `source.fetch`）：
 
 | source | 要什么参数 | 拿到什么 |
 |---|---|---|
@@ -24,6 +25,19 @@
 | `bili.video_subtitles` | `bvid`（必填）、`from`（第几分钟）、`lan` | 按 1 分钟切段的字幕，带 `[mm:ss]` 时间码；一次最多 20 段 |
 
 **取回的东西会先落进原灵的原始层（`raw/`），再交给她看。** 所以"查过"这件事本身是记得的——下次 `recall` 得到的是同一批记录，不是重新编一遍。
+
+**它还能在原灵管理台里多开两个页**（协议 v1.2 / v1.3 的 `ui.tabs`）：
+
+| tab | 类型 | 内容 |
+|---|---|---|
+| **规则** | `config` | 就是它的配置项，但按字段分到单独一页。用来演示管理台支持的 10 种控件（开关 / 勾选 / 按钮 / 滑块 / 五选一 / 输入 / 下拉 / 浏览文件 / 多行 / 可增删排序的列表） |
+| **点赞记录** | `records` | 声明的 `records.type = "like"`，由**原灵核心**查自己的原始层渲染 |
+
+> 关于「规则」页：那 10 项目前只是**控件的演示**，还没有接上真正的业务逻辑——它们能被填、能存进 `config.json`、改完会让模块重启，但不会改变模块行为。
+>
+> 其中**规则3（按钮）与规则8（浏览文件）是占位**：按钮要点下去做事，属于 `ui.action` 协议（还没定）；浏览文件需要核心出面开对话框（浏览器拿不到本机真实路径）。两者现在都是禁用状态。
+>
+> 关于「点赞记录」：**现在是空的**，而且会一直是空的——本模块是只读的，不点赞。这一页是为将来的写操作（点赞）留的位置，也顺便验证了"核心代查"这条路。
 
 ## 装上
 
@@ -65,23 +79,38 @@ yuanling module install --file "dist/bili-0.1.0.tgz" --root "D:\yuanling"
 
 ### 发一个新版本（让上面那个地址能用）
 
-发行版必须带 **`.tgz` 资产**，名字建议 `bili-<版本>.tgz`。
+发行版必须带 **`.tgz` 资产**，名字用 `bili-<版本>.tgz`（打包脚本自动这么命名）。
 
-**GitHub（自动）**：推 tag 就会跑 [`.github/workflows/release.yml`](.github/workflows/release.yml)——跑测试、打包、把 tgz 附到发行版。
-
-```powershell
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-**Gitee（手动，没有 Actions）**：
+完整流程（以 0.1.1 为例）：
 
 ```powershell
-node scripts/pack.mjs                      # → dist/bili-0.1.0.tgz
+# 1) 先改 yuanling.module.json 里的 version（发行版 tag 与它要一致）
+#    api 也要对：用了 ui.tabs 就必须 ≥ 1.2
+
+# 2) 打包 + 跑测试（pack.mjs 会把 src/ 与 manifest 打进 dist/）
+node --test
+node scripts/pack.mjs            # → dist/bili-0.1.1.tgz
+
+# 3) 提交并推代码
+git add -A
+git commit -m "..."
+git push gitee main
+git push github main
+
+# 4) 打 tag 并推（两个平台都推）
+git tag v0.1.1
+git push gitee v0.1.1
+git push github v0.1.1
 ```
 
-然后在 Gitee 的「发行版」→ 新建发行版 → 填 tag `v0.1.0` → **上传附件** 选那个 tgz。
-（Gitee 会自动把源码 zip/tar.gz 也放进资产里，不用管——原灵只认 `.tgz`。）
+**GitHub 侧自动**：推 tag 后 [`.github/workflows/release.yml`](.github/workflows/release.yml) 会跑测试、打包、把 tgz 挂到发行版上。去 Actions 页确认那条 run 是绿的，再到 Releases 看有没有 `bili-0.1.1.tgz`。
+
+**Gitee 侧手动**（没有 Actions）：网页进「发行版」→ 新建发行版 → tag 填 `v0.1.1` → **上传附件** 选 `dist\bili-0.1.1.tgz`。
+
+> Gitee 会自动把源码 zip/tar.gz 也放进资产里，不用管——原灵只认 `.tgz`。
+> 忘了传附件的话，原灵报的是"发行版里没有 .tgz 附件"，不是"安装失败"。
+
+推完 tag 之后，用户那边在管理台点「检查更新」就能看到新版本（自动检查每 6 小时也会打一次角标）。
 
 ## 凭据怎么填
 
@@ -153,11 +182,13 @@ node scripts/smoke.mjs bili.video_subtitles '{"bvid":"BV1GJ411x7h7"}'
 
 | 项 | 状态 |
 |---|---|
-| 单测 52 条（WBI 签名 / 文本整形 / 切段 / 帧协议 / manifest 一致性） | ✅ 全过，不联网 |
+| 单测 53 条（WBI 签名 / 文本整形 / 切段 / 帧协议 / manifest 与 ui.tabs 一致性） | ✅ 全过，不联网 |
 | WBI 签名打真接口 | ✅ `code=0`，20 条结果；从 nav 算出的 mixin 与实测值一致 |
 | 搜索（匿名） | ✅ 可用，不带 cookie 也行 |
 | 装进原灵 → 授予 → 取数 → 落 raw | ✅ 真链路验过 |
 | 重复取数幂等 | ✅ 第二次全部"以前取过，未重复落库"，raw 条数不变 |
+| 「规则」tab | ✅ 10 个控件都渲染出来了，保存能落盘（换机实测） |
+| 「点赞记录」tab | ✅ 空列表显示正确；过滤规则验过——**别的模块的记录不会出现** |
 | 字幕 | ⚠️ 代码路径通，但**没拿到真数据**：手头那份 cookie 已失效（nav 回 `-101`），需要你重新登录后再验 |
 
 ## 边界

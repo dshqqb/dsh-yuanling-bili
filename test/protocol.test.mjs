@@ -67,13 +67,28 @@ test('protocol：manifest 声明的 sources 与代码里的分派表必须一一
   }
 })
 
-test('protocol：manifest 本身合协议——api 1.1、声明 provide.source、入口是 node', () => {
-  assert.equal(manifest.api, '1.1')
+test('protocol：manifest 本身合协议——api 1.2、声明 provide.source、入口是 node', () => {
+  // v1.2：模块给管理台加了只读/配置型 tab（ui.tabs），所以协议次版本必须是 1.2
+  assert.equal(manifest.api, '1.2')
   assert.ok(manifest.capabilities.includes('provide.source'), '没有这个能力，核心根本不会发 source.fetch')
   assert.equal(manifest.entry.command[0], 'node')
   assert.ok(manifest.sources.length >= 2)
   // id 前缀必须是模块自己的 id（协议 §3.4）
   for (const s of manifest.sources) assert.ok(s.id.startsWith(`${manifest.id}.`), `${s.id} 缺前缀`)
+})
+
+test('protocol：ui.tabs 声明合法，字段都在 config.schema 里', () => {
+  assert.ok(Array.isArray(manifest.ui?.tabs) && manifest.ui.tabs.length >= 1, '要声明自定义 tab')
+  const props = Object.keys(manifest.config?.schema?.properties ?? {})
+  for (const t of manifest.ui.tabs) {
+    assert.match(t.id, /^[a-z][a-z0-9-]{1,23}$/)
+    assert.ok(t.label && t.label.length <= 16)
+    assert.ok(['kv', 'list', 'text', 'config', 'records'].includes(t.kind), `kind 不合法：${t.kind}`)
+    // config 型 tab 认领的字段必须真的存在，否则页面上会静默少几个控件
+    for (const f of t.fields ?? []) assert.ok(props.includes(f), `认领了不存在的字段：${f}`)
+    // records 型必须给 type（核心按它查原始层，并且强制只查本模块的记录）
+    if (t.kind === 'records') assert.match(t.records?.type ?? '', /^[a-z][a-z0-9._-]{0,31}$/)
+  }
 })
 
 test('protocol：条目里不能漏出内部字段 lean', async () => {

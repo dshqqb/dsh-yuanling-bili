@@ -2,8 +2,8 @@
   "id": "bili",
   "name": "B站",
   "description": "按关键词搜视频、拉官方字幕——只读，不发评论、不点赞、不改任何东西",
-  "version": "0.1.0",
-  "api": "1.1",
+  "version": "0.1.1",
+  "api": "1.2",
   "kind": "enricher",
   "entry": {
     "command": ["node", "src/main.mjs"]
@@ -61,9 +61,67 @@
           "type": "number",
           "description": "单次 HTTP 超时，默认 20000",
           "default": 20000
+        },
+
+        "rule1": { "type": "boolean", "description": "规则1（开关）" },
+        "rule2": { "type": "boolean", "x-widget": "checkbox", "description": "规则2（勾选）" },
+        "rule3": { "type": "string", "x-widget": "action", "description": "规则3（按钮）" },
+        "rule4": { "type": "number", "minimum": 0, "maximum": 100, "x-step": 5, "description": "规则4（滑块）" },
+        "rule5": {
+          "type": "string",
+          "enum": ["选项一", "选项二", "选项三", "选项四", "选项五"],
+          "description": "规则5（五选一）"
+        },
+        "rule6": { "type": "string", "description": "规则6（输入框）" },
+        "rule7": {
+          "type": "string",
+          "enum": ["下拉一", "下拉二", "下拉三", "下拉四", "下拉五", "下拉六"],
+          "description": "规则7（下拉列表）"
+        },
+        "rule8": { "type": "string", "x-widget": "file", "description": "规则8（浏览文件）" },
+        "rule9": { "type": "string", "x-widget": "textarea", "description": "规则9（多行输入）" },
+        "rule10": {
+          "type": "array",
+          "description": "规则10（可增删改排序的列表，每项三个字段）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "名称" },
+              "enabled": { "type": "boolean", "description": "启用" },
+              "weight": { "type": "number", "description": "权重" }
+            },
+            "required": ["name"]
+          }
         }
       }
     }
+  },
+  "ui": {
+    "tabs": [
+      {
+        "id": "rules",
+        "label": "规则",
+        "kind": "config",
+        "fields": [
+          "rule1",
+          "rule2",
+          "rule3",
+          "rule4",
+          "rule5",
+          "rule6",
+          "rule7",
+          "rule8",
+          "rule9",
+          "rule10"
+        ]
+      },
+      {
+        "id": "likes",
+        "label": "点赞记录",
+        "kind": "records",
+        "records": { "type": "like", "limit": 50 }
+      }
+    ]
   },
   "author": "yuanling contributors",
   "license": "MIT"
