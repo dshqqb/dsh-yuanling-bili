@@ -1,0 +1,43 @@
+name: release
+
+# 推一个 tag（v0.1.0 这种）就自动打出模块包，并附到这个 tag 的发行版里。
+# 这样"填库的网址就能装"才真的成立——核心会去发行的 assets 里找 .tgz。
+#
+# 注意：Gitee 这边没有 Actions，得手动传（见 README）。GitHub 是镜像，这里自动。
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 跑测试（包能打出来但模块是坏的，那这个 release 就没意义）
+        run: node --test test/*.test.mjs
+
+      - name: 打包
+        run: node scripts/pack.mjs
+
+      - name: 校验包能装（解出来必须有 manifest）
+        run: |
+          tar -tzf dist/*.tgz | head -20
+          tar -xzf dist/*.tgz -C /tmp
+          test -f /tmp/yuanling.module.json
+
+      - name: 附到发行版
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tgz
+          fail_on_unmatched_files: true
+          generate_release_notes: true

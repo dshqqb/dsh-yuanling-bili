@@ -1,0 +1,70 @@
+{
+  "id": "bili",
+  "name": "B站",
+  "description": "按关键词搜视频、拉官方字幕——只读，不发评论、不点赞、不改任何东西",
+  "version": "0.1.0",
+  "api": "1.1",
+  "kind": "enricher",
+  "entry": {
+    "command": ["node", "src/main.mjs"]
+  },
+  "capabilities": ["provide.source"],
+  "sources": [
+    {
+      "id": "bili.search_video",
+      "title": "按关键词搜 B 站视频：标题 / UP / 播放量 / 时长 / 简介",
+      "params": {
+        "type": "object",
+        "properties": {
+          "q": { "type": "string", "description": "搜索关键词" },
+          "page": { "type": "number", "description": "页码，从 1 开始；默认 1" },
+          "order": {
+            "type": "string",
+            "description": "排序：totalrank(综合) / click(播放) / pubdate(最新) / dm(弹幕)；默认 totalrank",
+            "default": "totalrank"
+          }
+        },
+        "required": ["q"]
+      }
+    },
+    {
+      "id": "bili.video_subtitles",
+      "title": "拉一条视频的官方字幕，按分钟切段返回（带 mm:ss 时间码）",
+      "params": {
+        "type": "object",
+        "properties": {
+          "bvid": { "type": "string", "description": "视频 BV 号，如 BV1xx411c7mD" },
+          "from": { "type": "number", "description": "从第几分钟开始取；默认 0（从头）" },
+          "lan": { "type": "string", "description": "字幕语言代码，默认 ai-zh（先找中文）" }
+        },
+        "required": ["bvid"]
+      }
+    }
+  ],
+  "config": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "sessdata": {
+          "type": "string",
+          "description": "B站登录 cookie 里的 SESSDATA。AI 字幕和部分搜索必须带登录态，没有就只能拿到公开结果"
+        },
+        "bili_jct": {
+          "type": "string",
+          "description": "cookie 里的 bili_jct（只读用途，不会发任何写请求）"
+        },
+        "buvid3": {
+          "type": "string",
+          "description": "cookie 里的 buvid3，缺了容易被风控拦"
+        },
+        "timeoutMs": {
+          "type": "number",
+          "description": "单次 HTTP 超时，默认 20000",
+          "default": 20000
+        }
+      }
+    }
+  },
+  "author": "yuanling contributors",
+  "license": "MIT"
+}

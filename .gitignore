@@ -1,0 +1,14 @@
+# 发行包（pack.mjs 生成的 tgz）
+dist/
+
+# 本地凭据与调试产物，绝不入库
+.env
+*.token
+credentials.json
+*.local.json
+
+# 依赖（本仓库零依赖，留个兜底）
+node_modules/
+
+# 冒烟测试的临时输出
+out*.txt
