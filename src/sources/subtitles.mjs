@@ -104,6 +104,11 @@ export async function fetchItems(client, params, { limit } = {}) {
       'E_BAD_REQUEST',
       '拿字幕需要登录态：模块配置里没有 sessdata。匿名请求只会返回 0 条字幕轨道（B站策略），' +
         '去管理台的模块配置里填 cookie 再试。',
+      {
+        code: 'cookie.missing',
+        level: 'warn',
+        hint: '模块配置里没有 SESSDATA：去「B站」页把 cookie（SESSDATA / bili_jct / buvid3）填上，匿名只能拿到公开结果',
+      },
     )
   }
   const nav = await client.nav()
@@ -112,6 +117,11 @@ export async function fetchItems(client, params, { limit } = {}) {
       'E_BAD_REQUEST',
       `配置里的 cookie 已失效（nav 说未登录${nav.uname ? '' : ''}）。` +
         '重新登录 B站后把新的 SESSDATA / bili_jct / buvid3 填进模块配置。',
+      {
+        code: 'cookie.expired',
+        level: 'error',
+        hint: 'cookie 已失效（B站 nav 说未登录）：重新登录后把新的 SESSDATA / bili_jct / buvid3 填进模块配置',
+      },
     )
   }
 

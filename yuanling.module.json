@@ -2,8 +2,8 @@
   "id": "bili",
   "name": "B站",
   "description": "按关键词搜视频、拉官方字幕——只读，不发评论、不点赞、不改任何东西",
-  "version": "0.1.1",
-  "api": "1.2",
+  "version": "0.1.2",
+  "api": "1.4",
   "kind": "enricher",
   "entry": {
     "command": ["node", "src/main.mjs"]

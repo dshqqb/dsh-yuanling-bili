@@ -6,9 +6,9 @@
 
 | | |
 |---|---|
-| 版本 | `0.1.1`（协议 `api: 1.2`） |
+| 版本 | `0.1.2`（协议 `api: 1.4`） |
 | 用的能力 | `provide.source` — 只被"要数据"，不会往外说话 |
-| 在原灵管理台里 | 「概况」「日志」+ 自己声明的「规则」「点赞记录」（`ui.tabs`） |
+| 在原灵管理台里 | 「概况」「日志」「审计」「诊断」+ 自己声明的「规则」「点赞记录」（`ui.tabs`） |
 | Gitee | https://gitee.com/dshqqb/dsh-yuanling-bili （**推荐**，国内直连稳） |
 | GitHub | https://github.com/dshqqb/dsh-yuanling-bili （镜像） |
 | 装它 | `yuanling module install --url https://gitee.com/dshqqb/dsh-yuanling-bili` |
@@ -38,6 +38,17 @@
 > 其中**规则3（按钮）与规则8（浏览文件）是占位**：按钮要点下去做事，属于 `ui.action` 协议（还没定）；浏览文件需要核心出面开对话框（浏览器拿不到本机真实路径）。两者现在都是禁用状态。
 >
 > 关于「点赞记录」：**现在是空的**，而且会一直是空的——本模块是只读的，不点赞。这一页是为将来的写操作（点赞）留的位置，也顺便验证了"核心代查"这条路。
+
+**它还会往原灵的「诊断」页报自己的事**（协议 v1.4 的 `diag.report`）：
+
+| 什么时候报 | 报什么 | 为什么这条值得占位 |
+|---|---|---|
+| 取字幕时没配 cookie | `cookie.missing`（警告） | 匿名只能拿 0 条轨道，但"没有字幕"和"没登录"是两件事，不说清就会被误解 |
+| cookie 失效（nav 说未登录） | `cookie.expired`（错误） | 只有让用户重新登录才能修，核心自己看不到 |
+| 被 B站限流（code -352 / -412） | `rate.limited`（警告） | 等一会儿就好，但也可能是 limit 取太大 |
+| 取数成功 | **报空**（撤回旧结论） | 成功本身就证明 cookie 没失效，旧结论必须消失 |
+
+不报网络抖动、不报参数错——**诊断位很贵，塞满"偶发失败"就等于没有诊断**。
 
 ## 装上
 
@@ -81,15 +92,19 @@ yuanling module install --file "dist/bili-0.1.0.tgz" --root "D:\yuanling"
 
 发行版必须带 **`.tgz` 资产**，名字用 `bili-<版本>.tgz`（打包脚本自动这么命名）。
 
-完整流程（以 0.1.1 为例）：
+> **当前状态：暂不发版。** 这个模块现在只是**协议的试验田**——它的价值在于把协议边界跑通（安装 / 升级 / 取数 / 自定义页 / 自报诊断），不在于功能本身。发版要挑"模块真能干点什么事"的时候再做，否则每改一次协议就要多一个只有试验价值的发行版。
+>
+> 所以 `0.1.2` 只提交代码、**不打 tag**：`yuanling module install --url <库的网址>` 这条路的验证已经在 0.1.0 / 0.1.1 上做完，不必为了新版本再走一遍。
+
+完整流程（等要发版时照这个走，以 0.1.2 为例）：
 
 ```powershell
 # 1) 先改 yuanling.module.json 里的 version（发行版 tag 与它要一致）
-#    api 也要对：用了 ui.tabs 就必须 ≥ 1.2
+#    api 也要对：用了 ui.tabs 就必须 ≥ 1.2，用了 diag.report 就必须 ≥ 1.4
 
 # 2) 打包 + 跑测试（pack.mjs 会把 src/ 与 manifest 打进 dist/）
 node --test
-node scripts/pack.mjs            # → dist/bili-0.1.1.tgz
+node scripts/pack.mjs            # → dist/bili-0.1.2.tgz
 
 # 3) 提交并推代码
 git add -A
@@ -98,14 +113,14 @@ git push gitee main
 git push github main
 
 # 4) 打 tag 并推（两个平台都推）
-git tag v0.1.1
-git push gitee v0.1.1
-git push github v0.1.1
+git tag v0.1.2
+git push gitee v0.1.2
+git push github v0.1.2
 ```
 
-**GitHub 侧自动**：推 tag 后 [`.github/workflows/release.yml`](.github/workflows/release.yml) 会跑测试、打包、把 tgz 挂到发行版上。去 Actions 页确认那条 run 是绿的，再到 Releases 看有没有 `bili-0.1.1.tgz`。
+**GitHub 侧自动**：推 tag 后 [`.github/workflows/release.yml`](.github/workflows/release.yml) 会跑测试、打包、把 tgz 挂到发行版上。去 Actions 页确认那条 run 是绿的，再到 Releases 看有没有 `bili-0.1.2.tgz`。
 
-**Gitee 侧手动**（没有 Actions）：网页进「发行版」→ 新建发行版 → tag 填 `v0.1.1` → **上传附件** 选 `dist\bili-0.1.1.tgz`。
+**Gitee 侧手动**（没有 Actions）：网页进「发行版」→ 新建发行版 → tag 填 `v0.1.2` → **上传附件** 选 `dist\bili-0.1.2.tgz`。
 
 > Gitee 会自动把源码 zip/tar.gz 也放进资产里，不用管——原灵只认 `.tgz`。
 > 忘了传附件的话，原灵报的是"发行版里没有 .tgz 附件"，不是"安装失败"。
@@ -165,7 +180,7 @@ git push github v0.1.1
 ## 开发
 
 ```powershell
-node --test test/*.test.mjs     # 52 条纯函数测试，不联网
+node --test test/*.test.mjs     # 63 条纯函数测试，不联网
 node scripts/smoke.mjs bili.search_video '{"q":"原灵"}'   # 真机冒烟（要能上外网）
 ```
 
@@ -178,18 +193,20 @@ $env:BILI_SESSDATA="…"; $env:BILI_JCT="…"; $env:BILI_BUVUID3="…"
 node scripts/smoke.mjs bili.video_subtitles '{"bvid":"BV1GJ411x7h7"}'
 ```
 
-## 现在的验证状态（2026-11-08）
+## 现在的验证状态（2026-11-09）
 
 | 项 | 状态 |
 |---|---|
-| 单测 53 条（WBI 签名 / 文本整形 / 切段 / 帧协议 / manifest 与 ui.tabs 一致性） | ✅ 全过，不联网 |
+| 单测 63 条（WBI 签名 / 文本整形 / 切段 / 帧协议 / 信封形状 / manifest 与 ui.tabs 一致性 / 自报诊断） | ✅ 全过，不联网 |
 | WBI 签名打真接口 | ✅ `code=0`，20 条结果；从 nav 算出的 mixin 与实测值一致 |
 | 搜索（匿名） | ✅ 可用，不带 cookie 也行 |
 | 装进原灵 → 授予 → 取数 → 落 raw | ✅ 真链路验过 |
 | 重复取数幂等 | ✅ 第二次全部"以前取过，未重复落库"，raw 条数不变 |
 | 「规则」tab | ✅ 10 个控件都渲染出来了，保存能落盘（换机实测） |
 | 「点赞记录」tab | ✅ 空列表显示正确；过滤规则验过——**别的模块的记录不会出现** |
-| 字幕 | ⚠️ 代码路径通，但**没拿到真数据**：手头那份 cookie 已失效（nav 回 `-101`），需要你重新登录后再验 |
+| 失败帧信封（协议 §4.2） | ✅ 已改成嵌套 `error:{code,message,retry}`；此前摊在顶层，导致核心把所有失败都吞成 `E_MODULE 模块返回失败` |
+| 自报诊断（协议 v1.4） | ✅ 真链路验过：没配 cookie 取字幕 → 核心「诊断」页出现 `module.cookie.missing` + "去填 SESSDATA" |
+| 字幕 | ⚠️ 代码路径通，但**没拿到真数据**：手头那份 cookie 已失效（nav 回 `-101`），需要你重新登录后再验——顺带一提，现在这种情况会在诊断页里直接说"cookie 已失效" |
 
 ## 边界
 

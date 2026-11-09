@@ -19,11 +19,17 @@ export const NAV_TTL_MS = 10 * 60 * 1000
 export const MIN_GAP_MS = 250
 export const DEFAULT_TIMEOUT_MS = 20_000
 
-/** 带协议错误码的错误——main.mjs 原样回给核心。 */
+/**
+ * 带协议错误码的错误——main.mjs 原样回给核心。
+ *
+ * `diag`（v1.4）：这个问题是否值得进核心的「诊断」页。只给**用户能动手解决**的那些
+ * （cookie 没了 / cookie 失效 / 被限流 / 被风控），网络抖动这类不该占着诊断位。
+ */
 export class BiliError extends Error {
-  constructor(code, message) {
+  constructor(code, message, diag = null) {
     super(message)
     this.code = code
+    this.diag = diag
   }
 }
 
@@ -40,6 +46,30 @@ export function cookieOf(config = {}) {
 export function mapBiliCode(code) {
   if (code === -352 || code === -412) return 'E_RATE'
   return 'E_BAD_REQUEST'
+}
+
+/**
+ * B站业务码 → 要不要进「诊断」页。
+ *
+ * 只挑**用户自己能解决**的：限流（等一会儿）、未登录/登录失效（去填 cookie）。
+ * 其它一律不报——诊断位很贵，塞满"偶发失败"就等于没有诊断。
+ */
+function diagForBiliCode(code) {
+  if (code === -352 || code === -412) {
+    return {
+      code: 'rate.limited',
+      level: 'warn',
+      hint: '被 B站限流了：等十几分钟再取；一次取太多（limit 调大）更容易触发',
+    }
+  }
+  if (code === -101) {
+    return {
+      code: 'cookie.expired',
+      level: 'error',
+      hint: '登录态失效（B站 code=-101）：重新登录 B站，把新的 SESSDATA / bili_jct / buvid3 填进模块配置',
+    }
+  }
+  return null
 }
 
 export class BiliClient {
@@ -109,7 +139,11 @@ export class BiliClient {
     const raw = await this.get('https://api.bilibili.com/x/web-interface/nav')
     const mixin = mixinKeyFromNav(raw)
     if (!mixin) {
-      throw new BiliError('E_BAD_REQUEST', '拿不到 WBI 签名材料（nav 里没有 wbi_img），B站可能改版或正在风控')
+      throw new BiliError('E_BAD_REQUEST', '拿不到 WBI 签名材料（nav 里没有 wbi_img），B站可能改版或正在风控', {
+        code: 'wbi.blocked',
+        level: 'warn',
+        hint: 'B站可能改版或正在风控：等一会儿再试；持续出现就是模块需要跟着改，不是配置问题',
+      })
     }
     this.navCache = {
       at: this.now(),
@@ -132,7 +166,8 @@ export class BiliClient {
   async check(promiseOrJson, what) {
     const d = await promiseOrJson
     if (Number(d?.code) !== 0) {
-      throw new BiliError(mapBiliCode(Number(d?.code)), `${what} 失败：B站 code=${d?.code} ${d?.message ?? ''}`.trim())
+      const n = Number(d?.code)
+      throw new BiliError(mapBiliCode(n), `${what} 失败：B站 code=${n} ${d?.message ?? ''}`.trim(), diagForBiliCode(n))
     }
     return d.data
   }
