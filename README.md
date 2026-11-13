@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| 版本 | `0.1.3`（协议 `api: 1.8`） |
-| 上报的 App | `app: "bili"`（v1.8；账户卡用它区分平台） |
+| 版本 | `0.1.4`（协议 `api: 1.8`） |
+| 上报的 App | `app: "bilibili"`（v1.8；账户卡用它区分平台） |
 | 用的能力 | `provide.source` — 只被"要数据"，不会往外说话 |
 | 在原灵管理台里 | 「概况」「日志」「审计」「诊断」+ 自己声明的「规则」「点赞记录」（`ui.tabs`） |
 | Gitee | https://gitee.com/dshqqb/dsh-yuanling-bili （**推荐**，国内直连稳） |
@@ -75,7 +75,7 @@ yuanling module install --url https://gitee.com/dshqqb/dsh-yuanling-bili/release
 
 # 或者自己本地打包（不联网）
 node scripts/pack.mjs
-yuanling module install --file "dist/bili-0.1.0.tgz" --root "D:\yuanling"
+yuanling module install --file "dist/bili-0.1.4.tgz" --root "D:\yuanling"
 ```
 
 装完**重启 DSH**（模块是插件启动时拉起的）。
@@ -105,7 +105,7 @@ yuanling module install --file "dist/bili-0.1.0.tgz" --root "D:\yuanling"
 
 # 2) 打包 + 跑测试（pack.mjs 会把 src/ 与 manifest 打进 dist/）
 node --test
-node scripts/pack.mjs            # → dist/bili-0.1.2.tgz
+node scripts/pack.mjs            # → dist/bili-0.1.4.tgz
 
 # 3) 提交并推代码
 git add -A
@@ -119,9 +119,9 @@ git push gitee v0.1.2
 git push github v0.1.2
 ```
 
-**GitHub 侧自动**：推 tag 后 [`.github/workflows/release.yml`](.github/workflows/release.yml) 会跑测试、打包、把 tgz 挂到发行版上。去 Actions 页确认那条 run 是绿的，再到 Releases 看有没有 `bili-0.1.2.tgz`。
+**GitHub 侧自动**：推 tag 后 [`.github/workflows/release.yml`](.github/workflows/release.yml) 会跑测试、打包、把 tgz 挂到发行版上。去 Actions 页确认那条 run 是绿的，再到 Releases 看有没有 `bili-0.1.4.tgz`。
 
-**Gitee 侧手动**（没有 Actions）：网页进「发行版」→ 新建发行版 → tag 填 `v0.1.2` → **上传附件** 选 `dist\bili-0.1.2.tgz`。
+**Gitee 侧手动**（没有 Actions）：网页进「发行版」→ 新建发行版 → tag 填 `v0.1.4` → **上传附件** 选 `dist\bili-0.1.4.tgz`。
 
 > Gitee 会自动把源码 zip/tar.gz 也放进资产里，不用管——原灵只认 `.tgz`。
 > 忘了传附件的话，原灵报的是"发行版里没有 .tgz 附件"，不是"安装失败"。

@@ -1,6 +1,6 @@
 {
   "name": "dsh-yuanling-bili",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "description": "原灵的 B 站模块：只读搜索与字幕，走模块协议，零依赖",

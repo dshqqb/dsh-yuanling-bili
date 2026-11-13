@@ -70,7 +70,7 @@ test('protocol：manifest 声明的 sources 与代码里的分派表必须一一
 test('protocol：manifest 本身合协议——api 1.8、声明 app/provide.source、入口是 node', () => {
   // api 必须 ≥ 它实际用到的协议版本：ui.tabs 要 1.2，diag.report 要 1.4；v1.8 起声明 app。
   assert.equal(manifest.api, '1.8')
-  assert.equal(manifest.app, 'bili')
+  assert.equal(manifest.app, 'bilibili')
   assert.ok(manifest.capabilities.includes('provide.source'), '没有这个能力，核心根本不会发 source.fetch')
   assert.equal(manifest.entry.command[0], 'node')
   assert.ok(manifest.sources.length >= 2)
